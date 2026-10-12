@@ -1,92 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0f19;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --primary-glow: rgba(99, 102, 241, 0.25);
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #f43f5e;
-  --accent-glow: rgba(244, 63, 94, 0.25);
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #1f293d;
-  --input: #1f293d;
-  --ring: #6366f1;
-  --radius: 0.75rem;
+  --ams-canvas: #070A11;
+  --ams-surface-1: #0D1322;
+  --ams-surface-2: #131C31;
+  --ams-surface-3: #1A2640;
+  --ams-border-subtle: #162035;
+  --ams-border-strong: #233352;
+  
+  --ams-text-primary: #F8FAFC;
+  --ams-text-secondary: #94A3B8;
+  --ams-text-muted: #64748B;
+  
+  --ams-brand-primary: #3B82F6;
+  --ams-brand-hover: #2563EB;
+  
+  --ams-status-active: #10B981;
+  --ams-status-booked: #0EA5E9;
+  --ams-status-replied: #6366F1;
+  --ams-status-warmup: #F59E0B;
+  --ams-status-bounced: #EF4444;
+
+  --radius: 0.5rem;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--ams-canvas);
+  color: var(--ams-text-primary);
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
-  selection-background-color: #6366f1;
-  selection-color: #ffffff;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: var(--ams-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f293d;
-  border-radius: 9999px;
+  background: var(--ams-border-strong);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
 
-/* Glassmorphism & Neon Glow */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Tabular Numerals for Data Integrity */
+.font-tabular {
+  font-feature-settings: "tnum" on, "cv05" on;
+  font-variant-numeric: tabular-nums;
 }
 
-.glass-card {
-  background: rgba(24, 33, 53, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+/* Shimmer Skeleton Loader */
+@keyframes ams-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-.glow-primary {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.35);
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #131C31 25%,
+    #1A2640 50%,
+    #131C31 75%
+  );
+  background-size: 200% 100%;
+  animation: ams-shimmer 1.8s ease-in-out infinite;
 }
 
-.glow-accent {
-  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.35);
+/* Subtle Interactive Surfaces */
+.ams-panel {
+  background-color: var(--ams-surface-1);
+  border: 1px solid var(--ams-border-subtle);
 }
 
-.ams-gradient-text {
-  background: linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #f43f5e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.ams-gradient-button {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #e11d48 100%);
-  transition: all 0.3s ease;
-}
-
-.ams-gradient-button:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+.ams-panel-hover:hover {
+  background-color: var(--ams-surface-2);
+  border-color: var(--ams-border-strong);
 }

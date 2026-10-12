@@ -196,9 +196,9 @@ export default function UnifiedInboxPage() {
                       )}
                     >
                       {t.sentiment === "INTERESTED"
-                        ? "🔥 Interested"
+                        ? "Interested"
                         : t.sentiment === "OOO"
-                        ? "💤 Out of Office"
+                        ? "Out of Office"
                         : "Objection"}
                     </span>
                     <span className="text-[10px] text-slate-500 truncate">

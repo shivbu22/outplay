@@ -16,7 +16,7 @@ import {
   MoreVertical,
   Layers,
   ArrowUpDown,
-  Sparkles,
+  X,
 } from "lucide-react";
 import { useDashboard } from "@/components/dashboard-shell";
 import { cn } from "@/lib/utils";
@@ -244,11 +244,17 @@ export default function ProspectsPage() {
             </thead>
             <tbody className="divide-y divide-[#1A253A]">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Loading prospects...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="py-3.5 px-4"><div className="w-4 h-4 bg-[#1A2640] rounded" /></td>
+                    <td className="py-3.5 px-4"><div className="w-32 h-4 bg-[#1A2640] rounded mb-1" /><div className="w-20 h-2.5 bg-[#141C31] rounded" /></td>
+                    <td className="py-3.5 px-4"><div className="w-24 h-4 bg-[#1A2640] rounded mb-1" /><div className="w-16 h-2.5 bg-[#141C31] rounded" /></td>
+                    <td className="py-3.5 px-4"><div className="w-28 h-4 bg-[#1A2640] rounded mb-1" /><div className="w-20 h-2.5 bg-[#141C31] rounded" /></td>
+                    <td className="py-3.5 px-4"><div className="w-24 h-6 bg-[#1A2640] rounded" /></td>
+                    <td className="py-3.5 px-4"><div className="w-16 h-5 bg-[#1A2640] rounded-full" /></td>
+                    <td className="py-3.5 px-4 text-right"><div className="w-8 h-8 bg-[#1A2640] rounded ml-auto" /></td>
+                  </tr>
+                ))
               ) : prospects.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
@@ -347,7 +353,7 @@ export default function ProspectsPage() {
                           )}
                         >
                           {p.status === "MEETING_BOOKED"
-                            ? "🎉 Meeting Booked"
+                            ? "Meeting Booked"
                             : p.status.replace(/_/g, " ")}
                         </span>
                       </td>
@@ -402,7 +408,7 @@ export default function ProspectsPage() {
                 onClick={() => setIsCsvModalOpen(false)}
                 className="text-slate-400 hover:text-white"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

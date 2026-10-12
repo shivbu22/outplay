@@ -361,7 +361,7 @@ export default function SequencesPage() {
                 onClick={() => setIsCreateModalOpen(false)}
                 className="text-slate-400 hover:text-white"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -428,7 +428,7 @@ export default function SequencesPage() {
                 onClick={() => setIsAiModalOpen(false)}
                 className="text-slate-400 hover:text-white"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -515,7 +515,7 @@ export default function SequencesPage() {
                 onClick={() => setIsAddStepModalOpen(false)}
                 className="text-slate-400 hover:text-white"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

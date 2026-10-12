@@ -11,7 +11,6 @@ import {
   Inbox,
   BarChart3,
   Settings,
-  Sparkles,
   Zap,
   ShieldCheck,
 } from "lucide-react";
@@ -25,7 +24,7 @@ interface SidebarProps {
 
 export function Sidebar({
   tenantName = "AMS Outreach",
-  brandColor = "#6366F1",
+  brandColor = "#3B82F6",
   isWhiteLabeled = false,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -41,29 +40,29 @@ export function Sidebar({
   ];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-[#1F293D] bg-[#0E1320] flex flex-col h-screen sticky top-0 select-none z-30">
+    <aside className="w-60 shrink-0 border-r border-[#162035] bg-[#0D1322] flex flex-col h-screen sticky top-0 select-none z-30">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-[#1F293D]">
-        <Link href="/" className="flex items-center gap-3 group">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-[#162035]">
+        <Link href="/" className="flex items-center gap-2.5 group">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-white shadow-sm"
             style={{
-              background: `linear-gradient(135deg, ${brandColor} 0%, #4F46E5 60%, #F43F5E 100%)`,
+              backgroundColor: brandColor,
             }}
           >
-            <Zap className="w-5 h-5 fill-white text-white" />
+            <Zap className="w-4 h-4 fill-white text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
+            <span className="font-bold text-xs tracking-tight text-white flex items-center gap-1.5">
               {tenantName}
               {isWhiteLabeled && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Custom
                 </span>
               )}
             </span>
-            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
-              Sales Engine
+            <span className="text-[9px] font-semibold text-slate-500 tracking-wider uppercase">
+              Sales Platform
             </span>
           </div>
         </Link>

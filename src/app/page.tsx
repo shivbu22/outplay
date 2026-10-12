@@ -78,20 +78,19 @@ export default function DashboardHome() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#131B2E] via-[#17223B] to-[#101726] border border-[#21304C] p-6 shadow-xl">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative rounded-lg bg-[#0D1322] border border-[#162035] p-6 shadow-sm">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-indigo-400" />
-                Live Engine
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Active Engine
               </span>
               <span className="text-xs text-slate-400">
-                {tenant.name} Multi-Channel Control
+                {tenant.name} Control Cockpit
               </span>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl font-bold text-white tracking-tight">
               Good morning, Alex.
             </h1>
             <p className="text-xs text-slate-300 mt-1 max-w-xl">
@@ -350,16 +349,16 @@ export default function DashboardHome() {
                               <span className="text-[10px] font-bold text-indigo-400 font-mono">
                                 #{st.stepOrder}
                               </span>
-                              <span>
+                              <span className="font-semibold">
                                 {st.channel === "EMAIL"
-                                  ? "✉️ Email"
+                                  ? "Email"
                                   : st.channel === "CALL"
-                                  ? "📞 Call"
+                                  ? "Call"
                                   : st.channel === "SMS"
-                                  ? "💬 SMS"
+                                  ? "SMS"
                                   : st.channel === "LINKEDIN"
-                                  ? "💼 LinkedIn"
-                                  : "⚡ Task"}
+                                  ? "LinkedIn"
+                                  : "Task"}
                               </span>
                               <span className="text-[10px] text-slate-400">
                                 (+{st.waitDays}d)

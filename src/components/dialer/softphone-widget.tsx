@@ -266,16 +266,16 @@ export function SoftphoneWidget({
                   <select
                     value={selectedDisposition}
                     onChange={(e) => setSelectedDisposition(e.target.value)}
-                    className="w-full bg-[#18233C] border border-[#27385A] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full bg-[#131C31] border border-[#233352] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-semibold"
                   >
-                    <option value="MEETING_BOOKED">🎉 Meeting Booked</option>
-                    <option value="INTERESTED">🔥 Interested (Follow up)</option>
-                    <option value="LEFT_VOICEMAIL">📞 Left Voicemail</option>
-                    <option value="VOICEMAIL_DROP">📼 Dropped Automated VM</option>
-                    <option value="GATEKEEPER">🛡️ Gatekeeper</option>
-                    <option value="NO_ANSWER">🚫 No Answer</option>
-                    <option value="BUSY">⏳ Busy</option>
-                    <option value="NOT_INTERESTED">❌ Not Interested</option>
+                    <option value="MEETING_BOOKED">Meeting Booked</option>
+                    <option value="INTERESTED">Interested (Follow Up)</option>
+                    <option value="LEFT_VOICEMAIL">Left Voicemail</option>
+                    <option value="VOICEMAIL_DROP">Dropped Automated VM</option>
+                    <option value="GATEKEEPER">Gatekeeper Screened</option>
+                    <option value="NO_ANSWER">No Answer</option>
+                    <option value="BUSY">Line Busy</option>
+                    <option value="NOT_INTERESTED">Not Interested</option>
                   </select>
                 </div>
 
