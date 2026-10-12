@@ -33,6 +33,59 @@ export default function ProspectsPage() {
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [csvSuccessMessage, setCsvSuccessMessage] = useState("");
 
+  // Bulk Enrollment Modal state
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [availableSequences, setAvailableSequences] = useState<any[]>([]);
+  const [selectedSequenceId, setSelectedSequenceId] = useState("");
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [enrollMessage, setEnrollMessage] = useState("");
+
+  const handleOpenEnrollModal = async () => {
+    setIsEnrollModalOpen(true);
+    setEnrollMessage("");
+    try {
+      const res = await fetch("/api/sequences");
+      if (res.ok) {
+        const d = await res.json();
+        setAvailableSequences(d.sequences || []);
+        if (d.sequences?.length > 0) {
+          setSelectedSequenceId(d.sequences[0].id);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleEnrollSelected = async () => {
+    if (!selectedSequenceId || selectedProspectIds.length === 0) return;
+    setIsEnrolling(true);
+    try {
+      const res = await fetch("/api/sequences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ENROLL",
+          sequenceId: selectedSequenceId,
+          prospectIds: selectedProspectIds,
+        }),
+      });
+      if (res.ok) {
+        setEnrollMessage(`Enrolled ${selectedProspectIds.length} prospects into cadence.`);
+        setTimeout(() => {
+          setIsEnrollModalOpen(false);
+          setEnrollMessage("");
+          setSelectedProspectIds([]);
+          loadProspects();
+        }, 1200);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
   const loadProspects = async () => {
     setLoading(true);
     try {
@@ -207,7 +260,7 @@ export default function ProspectsPage() {
                 {selectedProspectIds.length} selected
               </span>
               <button
-                onClick={() => alert("Bulk cadence enrollment ready.")}
+                onClick={handleOpenEnrollModal}
                 className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold hover:bg-indigo-500/30 transition-colors"
               >
                 Enroll in Sequence
@@ -441,6 +494,90 @@ export default function ProspectsPage() {
                     className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 shadow-md"
                   >
                     Run Demo CSV Import
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Cadence Enrollment Modal */}
+      {isEnrollModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#0E1524] border border-[#222E46] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1E2C44]">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <h3 className="text-sm font-bold text-white">
+                  Enroll {selectedProspectIds.length} Prospects into Cadence
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsEnrollModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {enrollMessage ? (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                {enrollMessage}
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                <p className="text-slate-300">
+                  Select the target multi-channel sequence to initiate automated touches across email, phone, and LinkedIn.
+                </p>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Target Cadence
+                  </label>
+                  <select
+                    value={selectedSequenceId}
+                    onChange={(e) => setSelectedSequenceId(e.target.value)}
+                    className="w-full bg-[#131C31] border border-[#233352] rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-semibold"
+                  >
+                    {availableSequences.map((seq) => (
+                      <option key={seq.id} value={seq.id}>
+                        {seq.name} ({seq.steps?.length || 0} steps • {seq._count?.enrollments || 0} enrolled)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#131C31] border border-[#233352] text-[11px] text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Initial Step:</span>
+                    <strong className="text-white">Step #1 (Automated Email)</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Mailbox Rotation:</span>
+                    <strong className="text-emerald-400">Round-Robin Active</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Stop on Reply:</span>
+                    <strong className="text-blue-400">Yes (Auto-Pause)</strong>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setIsEnrollModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={isEnrolling || !selectedSequenceId}
+                    onClick={handleEnrollSelected}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 shadow-md flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{isEnrolling ? "Enrolling..." : `Enroll ${selectedProspectIds.length} Prospects`}</span>
                   </button>
                 </div>
               </div>
