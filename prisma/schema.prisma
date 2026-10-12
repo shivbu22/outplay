@@ -1,0 +1,309 @@
+// Prisma Schema for AMS (Automated Multi-Channel Sales)
+// Multi-tenant architecture with white-label support
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id              String      @id @default(cuid())
+  name            String
+  subdomain       String      @unique
+  customDomain    String?     @unique
+  logoUrl         String?
+  brandColor      String      @default("#6366F1")
+  isWhiteLabeled  Boolean     @default(false)
+  planTier        String      @default("GROWTH") // FREE, STARTER, GROWTH, ENTERPRISE
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  users           User[]
+  prospects       Prospect[]
+  accounts        Account[]
+  sequences       Sequence[]
+  mailboxes       Mailbox[]
+  callLogs        CallLog[]
+  tasks           Task[]
+  activities      ActivityEvent[]
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  REP
+}
+
+model User {
+  id              String      @id @default(cuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email           String      @unique
+  firstName       String
+  lastName        String
+  passwordHash    String?
+  role            UserRole    @default(REP)
+  avatarUrl       String?
+  phone           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  assignedProspects Prospect[]
+  createdSequences  Sequence[]
+  mailboxes         Mailbox[]
+  callLogs          CallLog[]
+  tasks             Task[]
+
+  @@index([tenantId])
+}
+
+model Account {
+  id              String      @id @default(cuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  domain          String?
+  industry        String?
+  employeeCount   Int?
+  city            String?
+  country         String?
+  crmId           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  prospects       Prospect[]
+
+  @@index([tenantId])
+}
+
+enum ProspectStatus {
+  UNENROLLED
+  ACTIVE
+  PAUSED
+  REPLIED
+  MEETING_BOOKED
+  BOUNCED
+  UNSUBSCRIBED
+}
+
+model Prospect {
+  id              String          @id @default(cuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedRepId   String?
+  assignedRep     User?           @relation(fields: [assignedRepId], references: [id], onDelete: SetNull)
+  accountId       String?
+  account         Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  
+  email           String
+  firstName       String
+  lastName        String
+  title           String?
+  companyName     String?
+  phone           String?
+  linkedInUrl     String?
+  timezone        String          @default("America/New_York")
+  status          ProspectStatus  @default(UNENROLLED)
+  tags            String?         // Comma-separated or JSON
+  customFields    String?         // JSON string for dynamic metadata
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  enrollments     SequenceEnrollment[]
+  callLogs        CallLog[]
+  tasks           Task[]
+  activities      ActivityEvent[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+  @@index([tenantId, assignedRepId])
+}
+
+model Sequence {
+  id                  String          @id @default(cuid())
+  tenantId            String
+  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdById         String
+  createdBy           User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  name                String
+  description         String?
+  isActive            Boolean         @default(true)
+  scheduleTimezone    String          @default("America/New_York")
+  throttleDailyLimit  Int             @default(50)
+  enableMailboxRotation Boolean       @default(true)
+  stopOnReply         Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  steps               SequenceStep[]
+  enrollments         SequenceEnrollment[]
+
+  @@index([tenantId])
+}
+
+enum ChannelType {
+  EMAIL
+  CALL
+  SMS
+  LINKEDIN
+  TASK
+}
+
+model SequenceStep {
+  id              String          @id @default(cuid())
+  sequenceId      String
+  sequence        Sequence        @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  stepOrder       Int
+  channel         ChannelType
+  waitDays        Int             @default(1)
+  
+  subjectTemplate String?
+  bodyTemplate    String?
+  taskInstruction String?
+  smsTemplate     String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tasks           Task[]
+
+  @@unique([sequenceId, stepOrder])
+}
+
+enum EnrollmentStatus {
+  PENDING
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  STOPPED_REPLY
+  STOPPED_BOUNCE
+}
+
+model SequenceEnrollment {
+  id                  String            @id @default(cuid())
+  sequenceId          String
+  sequence            Sequence          @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  prospectId          String
+  prospect            Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  currentStepOrder    Int               @default(1)
+  status              EnrollmentStatus  @default(IN_PROGRESS)
+  nextExecutionAt     DateTime?
+  enrolledAt          DateTime          @default(now())
+  completedAt         DateTime?
+  updatedAt           DateTime          @updatedAt
+
+  @@unique([sequenceId, prospectId])
+  @@index([status, nextExecutionAt])
+}
+
+model Mailbox {
+  id              String      @id @default(cuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  email           String
+  senderName      String
+  provider        String      @default("GOOGLE") // GOOGLE, OUTLOOK, SMTP
+  dailyLimit      Int         @default(50)
+  sentToday       Int         @default(0)
+  isActive        Boolean     @default(true)
+  healthScore     Int         @default(98)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([tenantId, email])
+}
+
+enum CallDisposition {
+  INTERESTED
+  MEETING_BOOKED
+  LEFT_VOICEMAIL
+  VOICEMAIL_DROP
+  NO_ANSWER
+  BUSY
+  GATEKEEPER
+  WRONG_NUMBER
+  NOT_INTERESTED
+}
+
+model CallLog {
+  id              String          @id @default(cuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prospectId      String
+  prospect        Prospect        @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  repId           String
+  rep             User            @relation(fields: [repId], references: [id], onDelete: Cascade)
+  
+  durationSeconds Int             @default(0)
+  disposition     CallDisposition
+  recordingUrl    String?
+  notes           String?
+  createdAt       DateTime        @default(now())
+
+  @@index([tenantId, repId])
+  @@index([prospectId])
+}
+
+enum TaskStatus {
+  DUE
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+model Task {
+  id              String          @id @default(cuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prospectId      String
+  prospect        Prospect        @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  assignedRepId   String
+  assignedRep     User            @relation(fields: [assignedRepId], references: [id], onDelete: Cascade)
+  sequenceStepId  String?
+  sequenceStep    SequenceStep?   @relation(fields: [sequenceStepId], references: [id], onDelete: SetNull)
+  
+  channel         ChannelType
+  status          TaskStatus      @default(DUE)
+  dueAt           DateTime
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([tenantId, assignedRepId, status])
+}
+
+enum ActivityType {
+  EMAIL_SENT
+  EMAIL_OPENED
+  LINK_CLICKED
+  EMAIL_REPLIED
+  EMAIL_BOUNCED
+  CALL_LOGGED
+  SMS_SENT
+  LINKEDIN_TOUCH
+  MEETING_BOOKED
+}
+
+model ActivityEvent {
+  id              String        @id @default(cuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prospectId      String
+  prospect        Prospect      @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  
+  type            ActivityType
+  metadata        String?       // JSON event attributes
+  createdAt       DateTime      @default(now())
+
+  @@index([tenantId, type, createdAt])
+  @@index([prospectId])
+}

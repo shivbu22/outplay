@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "AMS Connect - Multi-Channel Sales Prospector",
+  "version": "1.0.0",
+  "description": "1-click LinkedIn profile capture and direct cadence enrollment for AMS.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "http://localhost:3000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AMS Connect"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/in/*"],
+      "js": ["content-script.js"],
+      "css": ["overlay.css"]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+#ams-connect-card {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 280px;
+  background: #0E1524;
+  border: 1px solid #23314B;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  z-index: 999999;
+  overflow: hidden;
+  color: #F1F5F9;
+}
+
+#ams-connect-card .ams-header {
+  padding: 12px 16px;
+  background: #141E33;
+  border-bottom: 1px solid #23314B;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#ams-connect-card .ams-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366F1, #F43F5E);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+#ams-connect-card .ams-header h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+#ams-connect-card .ams-header span {
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+#ams-connect-card .ams-body {
+  padding: 14px 16px;
+}
+
+#ams-connect-card #ams-prospect-preview {
+  font-size: 11px;
+  color: #CBD5E1;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+#ams-connect-card #ams-enroll-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
+  border: none;
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#ams-connect-card #ams-enroll-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
