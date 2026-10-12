@@ -110,17 +110,19 @@ Transform the AMS (Automated Multi-Channel Sales) platform from static polling i
 
 ## Checkpoints & Verification Schedule
 
-- **Checkpoint 1 (After Tasks RT-1.1 - RT-1.3):**
-  - SSE connection opens on `http://localhost:3000/api/realtime/stream`.
+- **Checkpoint 1 (Completed):**
+  - SSE connection verified on `http://localhost:3000/api/realtime/stream`.
   - Browser console logs active live event streaming connection with heartbeats.
-- **Checkpoint 2 (After Tasks RT-2.1 - RT-2.2):**
-  - Softphone produces audible DTMF tones on dialpad clicks.
-  - Active call reacts to real microphone input with dynamic frequency bars.
-- **Checkpoint 3 (After Tasks RT-3.1 - RT-3.2):**
-  - Cadence tick advances step automatically.
-  - Inbound webhook pauses sequence and broadcasts real-time reply alert.
-- **Checkpoint 4 (After Task RT-4.1):**
-  - Multi-tab synchronization verified: action in Tab 1 updates Tab 2 live.
+- **Checkpoint 2 (Completed):**
+  - Softphone produces audible ITU dual-tone DTMF on dialpad clicks.
+  - Active call captures live Web Audio `getUserMedia` with frequency analyser visualizer.
+- **Checkpoint 3 (Completed):**
+  - Cadence tick advances enrolled prospects automatically (`/api/cadence/tick`).
+  - Inbound webhook (`/api/webhooks/inbound`) pauses sequence (`STOPPED_REPLY`) and broadcasts real-time reply alert.
+- **Checkpoint 4 (Completed):**
+  - Multi-workspace live synchronization verified: action in one view updates all views in real time.
+- **Checkpoint 5 (Completed):**
+  - End-to-end browser subagent session validated all 7 primary flows (Dashboard, Prospects Bulk Enroll, Power Dialer with DTMF & Audio Playback, Unified Inbox with AI Draft Copilot, Analytics CSV Export, White-Label Customizer). Full recording saved.
 
 ---
 
