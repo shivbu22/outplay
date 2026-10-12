@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { eventBus } from "@/lib/events";
 
 // GET dialer queue and recent call logs
 export async function GET() {
@@ -79,14 +80,19 @@ export async function POST(request: Request) {
         data: { status: "MEETING_BOOKED" },
       });
 
-      await db.activityEvent.create({
+      const act = await db.activityEvent.create({
         data: {
           tenantId: tenant.id,
           prospectId,
           type: "MEETING_BOOKED",
           metadata: JSON.stringify({ notes }),
         },
+        include: {
+          prospect: true,
+        },
       });
+
+      eventBus.broadcast("ACTIVITY_CREATED", act, tenant.id);
     }
 
     // Mark corresponding task as COMPLETED if it was in queue
@@ -101,6 +107,17 @@ export async function POST(request: Request) {
         completedAt: new Date(),
       },
     });
+
+    // Broadcast realtime event
+    eventBus.broadcast(
+      "CALL_LOGGED",
+      {
+        callLog: log,
+        disposition,
+        durationSeconds,
+      },
+      tenant.id
+    );
 
     return NextResponse.json({ success: true, callLog: log }, { status: 201 });
   } catch (error) {

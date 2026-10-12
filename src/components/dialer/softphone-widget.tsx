@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Phone,
   PhoneOff,
@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { playDtmfTone } from "@/lib/dtmf";
 
 interface SoftphoneWidgetProps {
   isOpen: boolean;
@@ -46,6 +47,13 @@ export function SoftphoneWidget({
   const [callDuration, setCallDuration] = useState(0);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  // Web Audio mic levels & stream refs
+  const [audioLevels, setAudioLevels] = useState<number[]>([10, 16, 24, 14, 18]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
   // Disposition fields
   const [selectedDisposition, setSelectedDisposition] = useState("MEETING_BOOKED");
   const [notes, setNotes] = useState("");
@@ -71,13 +79,128 @@ export function SoftphoneWidget({
     return () => clearInterval(interval);
   }, [callState]);
 
+  // Web Audio microphone processing and frequency stream
+  useEffect(() => {
+    if (callState !== "CONNECTED") {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      return;
+    }
+
+    let active = true;
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+
+    async function initMic() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("No mediaDevices");
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!active) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        mediaStreamRef.current = stream;
+
+        const ctx = new AudioCtx();
+        audioContextRef.current = ctx;
+
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 32;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const updateLevels = () => {
+          if (!active) return;
+          analyser.getByteFrequencyData(dataArray);
+          const b1 = Math.max(6, Math.min(32, Math.round((dataArray[1] / 255) * 30)));
+          const b2 = Math.max(6, Math.min(32, Math.round((dataArray[2] / 255) * 34)));
+          const b3 = Math.max(6, Math.min(32, Math.round((dataArray[3] / 255) * 28)));
+          const b4 = Math.max(6, Math.min(32, Math.round((dataArray[4] / 255) * 32)));
+          const b5 = Math.max(6, Math.min(32, Math.round((dataArray[5] / 255) * 26)));
+          setAudioLevels([b1, b2, b3, b4, b5]);
+          animFrameRef.current = requestAnimationFrame(updateLevels);
+        };
+        updateLevels();
+      } catch {
+        // Graceful procedural audio fallback if mic is blocked/denied
+        let tick = 0;
+        const fallbackLoop = () => {
+          if (!active) return;
+          tick += 0.15;
+          const b1 = Math.round(10 + Math.sin(tick * 1.2) * 8);
+          const b2 = Math.round(14 + Math.cos(tick * 1.5) * 10);
+          const b3 = Math.round(18 + Math.sin(tick * 2.1) * 12);
+          const b4 = Math.round(12 + Math.cos(tick * 0.9) * 8);
+          const b5 = Math.round(8 + Math.sin(tick * 1.7) * 6);
+          setAudioLevels([b1, b2, b3, b4, b5]);
+          animFrameRef.current = requestAnimationFrame(fallbackLoop);
+        };
+        fallbackLoop();
+      }
+    }
+
+    initMic();
+
+    return () => {
+      active = false;
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close().catch(() => {});
+      }
+    };
+  }, [callState]);
+
   const handleStartCall = () => {
     if (!phoneNumber) return;
     setCallState("DIALING");
-    // Simulate connection after 2 seconds
+
+    // Broadcast CALL_STARTED over realtime stream
+    try {
+      fetch("/api/realtime/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "CALL_STARTED",
+          data: {
+            phoneNumber,
+            prospectName,
+            prospectId,
+          },
+        }),
+      }).catch(() => {});
+    } catch {
+      // Safe ignore
+    }
+
+    // Simulate carrier connection after 1.8 seconds
     setTimeout(() => {
       setCallState("CONNECTED");
-    }, 2000);
+    }, 1800);
+  };
+
+  const toggleMute = () => {
+    const nextMute = !isMuted;
+    setIsMuted(nextMute);
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = !nextMute;
+      });
+    }
   };
 
   const handleEndCall = () => {
@@ -200,35 +323,41 @@ export function SoftphoneWidget({
                 <p className="text-xs text-slate-400 font-mono mt-0.5">{phoneNumber}</p>
               </div>
 
-              {/* Status and Waveform */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#18233C] border border-[#243354]">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-3 bg-emerald-400 rounded-full animate-bounce" />
-                  <span
-                    className="w-1.5 h-4 bg-emerald-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-1.5 h-2 bg-emerald-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
+              {/* Status and Reactive Waveform */}
+              <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#18233C] border border-[#243354]">
+                <div className="flex items-center gap-1 h-6">
+                  {audioLevels.map((lvl, idx) => (
+                    <span
+                      key={idx}
+                      className={cn(
+                        "w-1.5 rounded-full transition-all duration-75",
+                        isMuted ? "bg-slate-500" : "bg-emerald-400"
+                      )}
+                      style={{ height: `${isMuted ? 4 : lvl}px` }}
+                    />
+                  ))}
                 </div>
                 <span className="text-xs font-mono font-bold text-emerald-400">
                   {callState === "DIALING" ? "Ringing..." : formatTimer(callDuration)}
                 </span>
+                {isMuted && (
+                  <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                    Muted
+                  </span>
+                )}
               </div>
 
               {/* Mid-Call Action Buttons */}
               <div className="flex items-center gap-3 mt-4">
                 <button
-                  onClick={() => setIsMuted(!isMuted)}
+                  onClick={toggleMute}
                   className={cn(
                     "w-11 h-11 rounded-full flex items-center justify-center transition-colors",
                     isMuted
                       ? "bg-rose-500 text-white"
                       : "bg-[#18233C] text-slate-300 hover:bg-[#202E4E]"
                   )}
-                  title={isMuted ? "Unmute" : "Mute"}
+                  title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
                 >
                   {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
@@ -329,8 +458,11 @@ export function SoftphoneWidget({
                 {keypad.map((k) => (
                   <button
                     key={k}
-                    onClick={() => setPhoneNumber((prev) => prev + k)}
-                    className="h-10 rounded-xl bg-[#141E33] border border-[#222E46] text-white font-bold text-sm hover:bg-[#1E2C48] hover:border-indigo-500/40 active:scale-95 transition-all flex items-center justify-center"
+                    onClick={() => {
+                      playDtmfTone(k);
+                      setPhoneNumber((prev) => prev + k);
+                    }}
+                    className="h-10 rounded-xl bg-[#141E33] border border-[#222E46] text-white font-bold text-sm hover:bg-[#1E2C48] hover:border-indigo-500/40 active:scale-95 transition-all flex items-center justify-center font-mono"
                   >
                     {k}
                   </button>

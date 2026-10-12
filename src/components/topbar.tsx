@@ -2,24 +2,55 @@
 
 import React from "react";
 import { Search, Bell, Phone, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TopbarProps {
   onOpenDialer?: (number?: string, name?: string) => void;
   onOpenAddProspect?: () => void;
+  realtimeStatus?: string;
 }
 
-export function Topbar({ onOpenDialer, onOpenAddProspect }: TopbarProps) {
+export function Topbar({
+  onOpenDialer,
+  onOpenAddProspect,
+  realtimeStatus = "CONNECTED",
+}: TopbarProps) {
   return (
     <header className="h-14 border-b border-[#162035] bg-[#0D1322] px-6 flex items-center justify-between sticky top-0 z-20">
-      {/* Search Input */}
-      <div className="flex items-center gap-3 w-80">
-        <div className="relative w-full">
+      {/* Search Input & Live Engine Badge */}
+      <div className="flex items-center gap-3">
+        <div className="relative w-72">
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search prospects, sequences (Ctrl+K)..."
             className="w-full bg-[#131C31] border border-[#233352] rounded-md pl-8 pr-3.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
           />
+        </div>
+
+        {/* Real-time Status Badge */}
+        <div
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border",
+            realtimeStatus === "CONNECTED"
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : realtimeStatus === "CONNECTING"
+              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+              : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+          )}
+          title={`SSE Engine: ${realtimeStatus}`}
+        >
+          <span
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              realtimeStatus === "CONNECTED"
+                ? "bg-emerald-400 animate-pulse"
+                : realtimeStatus === "CONNECTING"
+                ? "bg-amber-400 animate-ping"
+                : "bg-rose-400"
+            )}
+          />
+          <span>{realtimeStatus === "CONNECTED" ? "LIVE SSE" : realtimeStatus}</span>
         </div>
       </div>
 

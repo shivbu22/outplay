@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { SoftphoneWidget } from "@/components/dialer/softphone-widget";
 import { AddProspectModal } from "@/components/add-prospect-modal";
+import { useRealtime, ConnectionStatus } from "@/hooks/use-realtime";
 
 interface DashboardContextType {
   openDialer: (number?: string, name?: string, id?: string) => void;
@@ -15,6 +16,7 @@ interface DashboardContextType {
     isWhiteLabeled: boolean;
   };
   refreshTenant: () => Promise<void>;
+  realtimeStatus: ConnectionStatus;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -36,6 +38,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   // Add Prospect state
   const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+
+  // Real-time Event Stream connection
+  const realtime = useRealtime();
 
   // Tenant / White-Label branding state
   const [tenant, setTenant] = useState({
@@ -83,6 +88,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         openAddProspect,
         tenant,
         refreshTenant: fetchTenant,
+        realtimeStatus: realtime.status,
       }}
     >
       <div className="flex min-h-screen bg-[#0B0F19] text-slate-100 font-sans">
@@ -98,6 +104,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Topbar
             onOpenDialer={() => openDialer()}
             onOpenAddProspect={openAddProspect}
+            realtimeStatus={realtime.status}
           />
           <main className="flex-1 p-6 overflow-y-auto">{children}</main>
         </div>

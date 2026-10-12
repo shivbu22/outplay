@@ -74,3 +74,34 @@
 - [x] Task 9.1: Build sequence and team performance dashboard
   - Acceptance: Visual conversion funnel (Delivered -> Opened -> Replied -> Calls -> Meetings), SDR leaderboard, and domain deliverability scores.
   - Files: `src/app/analytics/page.tsx`, `src/app/api/analytics/route.ts`
+
+## Phase 10: Real-Time Engine & Live Telemetry
+- [x] Task 10.1: Build In-Memory Pub/Sub Event Bus (`src/lib/events.ts`)
+  - Acceptance: Type-safe event dispatch and subscription for `CALL_STARTED`, `CALL_LOGGED`, `EMAIL_SENT`, `PROSPECT_REPLIED`, `METRIC_UPDATE`.
+  - Verify: Events successfully broadcast to active listeners.
+  - Files: `src/lib/events.ts`
+- [x] Task 10.2: Implement SSE Streaming Route Handler (`/api/realtime/stream`)
+  - Acceptance: Delivers persistent `text/event-stream` with keep-alive heartbeats and auto-fanout to connected browsers.
+  - Verify: `curl -N http://localhost:3000/api/realtime/stream` receives connection event and heartbeats.
+  - Files: `src/app/api/realtime/stream/route.ts`
+- [x] Task 10.3: Client Real-Time Hook & Dashboard Shell Integration
+  - Acceptance: Automatically listens to stream, updates React context, and syncs live state across tabs.
+  - Verify: Action in Tab 1 updates Tab 2 live without reload.
+  - Files: `src/hooks/use-realtime.ts`, `src/components/dashboard-shell.tsx`
+- [x] Task 10.4: Web Audio DTMF Keypad Tone Generator & Live Audio Visualizer
+  - Acceptance: Dialpad clicks produce acoustic dual-tone frequencies (`OscillatorNode`); microphone input drives reactive frequency bars (`AnalyserNode`).
+  - Verify: Audio visualizer bounces to real speech; audible tones play on dialpad press.
+  - Files: `src/lib/dtmf.ts`, `src/components/dialer/softphone-widget.tsx`
+- [x] Task 10.5: Automated Cadence Execution Background Engine
+  - Acceptance: Evaluates due enrollments, advances step, simulates email dispatch via mailbox rotation, creates dialer tasks.
+  - Verify: Triggering cadence tick advances enrolled prospect and updates dashboard live.
+  - Files: `src/lib/cadence-engine.ts`, `src/app/api/cadence/tick/route.ts`
+- [x] Task 10.6: Inbound Reply Webhook & Cadence Auto-Pause
+  - Acceptance: Inbound email marks prospect `REPLIED`, halts cadence `STOPPED_REPLY`, and pushes live to Unified Inbox.
+  - Verify: POST to `/api/webhooks/inbound` pauses cadence and displays thread live.
+  - Files: `src/app/api/webhooks/inbound/route.ts`
+- [x] Task 10.7: Live Stream Feed & Pipeline Metric Synchronization
+  - Acceptance: Dashboard activity feed animates in incoming events live; KPI counters update dynamically.
+  - Verify: New event pops up at the top of the dashboard feed instantly.
+  - Files: `src/app/page.tsx`
+

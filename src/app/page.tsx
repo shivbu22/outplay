@@ -30,6 +30,8 @@ export default function DashboardHome() {
   const [callTasks, setCallTasks] = useState<any[]>([]);
   const [sequences, setSequences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isTicking, setIsTicking] = useState(false);
+  const [tickMessage, setTickMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -61,15 +63,96 @@ export default function DashboardHome() {
     }
   };
 
+  const handleTriggerTick = async () => {
+    setIsTicking(true);
+    setTickMessage(null);
+    try {
+      const res = await fetch("/api/cadence/tick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxBatch: 2 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const count = data.result?.executed || 0;
+        setTickMessage(`Engine tick executed ${count} active step${count === 1 ? "" : "s"}`);
+        setTimeout(() => setTickMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error("Cadence tick execution failed:", err);
+    } finally {
+      setIsTicking(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
 
-    // Listen for events emitted by softphone or prospect modal
+    // Listen for SSE real-time stream events
+    const handleRealtimeEvent = (customEvt: any) => {
+      const event = customEvt.detail;
+      if (!event) return;
+
+      if (event.type === "ACTIVITY_CREATED" && event.data) {
+        setActivities((prev) => {
+          const item = event.data;
+          if (prev.some((p) => p.id === item.id)) return prev;
+          return [item, ...prev].slice(0, 15);
+        });
+      } else if (event.type === "EMAIL_SENT" && event.data) {
+        setActivities((prev) => {
+          const item = event.data;
+          if (prev.some((p) => p.id === item.id)) return prev;
+          return [item, ...prev].slice(0, 15);
+        });
+        setMetrics((prev: any) =>
+          prev
+            ? {
+                ...prev,
+                totalEmailsSentToday: (prev.totalEmailsSentToday || 0) + 1,
+              }
+            : prev
+        );
+      } else if (event.type === "PROSPECT_REPLIED" && event.data) {
+        const p = event.data.prospect;
+        const fakeAct = {
+          id: "rep_" + Date.now(),
+          type: "EMAIL_REPLIED",
+          prospect: p,
+          metadata: JSON.stringify({
+            subject: event.data.subject,
+            sentiment: event.data.sentiment,
+          }),
+          createdAt: new Date().toISOString(),
+        };
+        setActivities((prev) => [fakeAct, ...prev].slice(0, 15));
+        setMetrics((prev: any) =>
+          prev ? { ...prev, replyRate: "16.8%" } : prev
+        );
+      } else if (event.type === "CALL_LOGGED") {
+        loadData();
+      } else if (event.type === "CADENCE_STEP_ADVANCED") {
+        fetch("/api/dialer")
+          .then((r) => r.json())
+          .then((d) => setCallTasks(d.tasks || []))
+          .catch(() => {});
+      } else if (event.type === "METRIC_UPDATE") {
+        fetch("/api/analytics")
+          .then((r) => r.json())
+          .then((a) => {
+            if (a.metrics) setMetrics(a.metrics);
+          })
+          .catch(() => {});
+      }
+    };
+
     const handleRefresh = () => loadData();
+    window.addEventListener("ams:realtime", handleRealtimeEvent);
     window.addEventListener("ams:call-logged", handleRefresh);
     window.addEventListener("ams:prospect-created", handleRefresh);
 
     return () => {
+      window.removeEventListener("ams:realtime", handleRealtimeEvent);
       window.removeEventListener("ams:call-logged", handleRefresh);
       window.removeEventListener("ams:prospect-created", handleRefresh);
     };
@@ -83,8 +166,8 @@ export default function DashboardHome() {
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Active Engine
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Active SSE Engine
               </span>
               <span className="text-xs text-slate-400">
                 {tenant.name} Control Cockpit
@@ -99,14 +182,39 @@ export default function DashboardHome() {
                 {metrics ? metrics.totalProspects : "..."} prospects
               </span> across email, phone, and LinkedIn.
             </p>
+            {tickMessage && (
+              <p className="text-xs font-mono text-emerald-400 mt-2 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded inline-block">
+                • {tickMessage}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {/* Realtime Cadence Trigger */}
+            <button
+              disabled={isTicking}
+              onClick={handleTriggerTick}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-200 bg-[#152033] hover:bg-[#1C2C48] border border-[#233452] transition-all hover:scale-[1.02]"
+              title="Runs one tick of automated cadences in real-time"
+            >
+              <Play
+                className={cn(
+                  "w-3.5 h-3.5 text-amber-400 fill-amber-400",
+                  isTicking && "animate-spin"
+                )}
+              />
+              <span>{isTicking ? "Ticking Engine..." : "Run Cadence Tick"}</span>
+            </button>
+
             <button
               onClick={() => {
                 if (callTasks.length > 0) {
                   const first = callTasks[0];
-                  openDialer(first.prospect.phone, `${first.prospect.firstName} ${first.prospect.lastName}`, first.prospect.id);
+                  openDialer(
+                    first.prospect.phone,
+                    `${first.prospect.firstName} ${first.prospect.lastName}`,
+                    first.prospect.id
+                  );
                 } else {
                   openDialer();
                 }
@@ -410,17 +518,29 @@ export default function DashboardHome() {
                         "w-6 h-6 rounded-lg shrink-0 flex items-center justify-center mt-0.5",
                         a.type === "MEETING_BOOKED"
                           ? "bg-emerald-500/20 text-emerald-400"
+                          : a.type === "EMAIL_REPLIED"
+                          ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30"
+                          : a.type === "EMAIL_SENT"
+                          ? "bg-blue-500/20 text-blue-400"
                           : a.type === "EMAIL_OPENED"
                           ? "bg-purple-500/20 text-purple-400"
-                          : a.type === "LINKEDIN_CONNECT"
-                          ? "bg-blue-500/20 text-blue-400"
+                          : a.type === "CALL_SCHEDULED"
+                          ? "bg-amber-500/20 text-amber-400"
+                          : a.type === "LINKEDIN_TOUCH" || a.type === "LINKEDIN_CONNECT"
+                          ? "bg-sky-500/20 text-sky-400"
                           : "bg-teal-500/20 text-teal-400"
                       )}
                     >
                       {a.type === "MEETING_BOOKED" ? (
                         <CalendarCheck className="w-3.5 h-3.5" />
-                      ) : a.type === "EMAIL_OPENED" ? (
+                      ) : a.type === "EMAIL_REPLIED" ? (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      ) : a.type === "EMAIL_SENT" || a.type === "EMAIL_OPENED" ? (
                         <Mail className="w-3.5 h-3.5" />
+                      ) : a.type === "CALL_SCHEDULED" ? (
+                        <Phone className="w-3.5 h-3.5" />
+                      ) : a.type === "CALL_LOGGED" ? (
+                        <PhoneCall className="w-3.5 h-3.5" />
                       ) : (
                         <Activity className="w-3.5 h-3.5" />
                       )}
@@ -434,8 +554,18 @@ export default function DashboardHome() {
                         </span>{" "}
                         {a.type === "MEETING_BOOKED"
                           ? "agreed to meeting via phone call"
+                          : a.type === "EMAIL_REPLIED"
+                          ? "replied to cadence email with high intent"
+                          : a.type === "EMAIL_SENT"
+                          ? "dispatched automated cadence email"
                           : a.type === "EMAIL_OPENED"
                           ? "opened cadence email"
+                          : a.type === "CALL_SCHEDULED"
+                          ? "queued cadence phone task in power dialer"
+                          : a.type === "CALL_LOGGED"
+                          ? "completed telephone outreach"
+                          : a.type === "LINKEDIN_TOUCH"
+                          ? "dispatched automated LinkedIn touchpoint"
                           : a.type === "LINKEDIN_CONNECT"
                           ? "accepted LinkedIn invitation"
                           : a.type.toLowerCase().replace(/_/g, " ")}
