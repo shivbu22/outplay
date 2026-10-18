@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 dev.db
 dev.db-journal
+
+node_modules/
+.venv/
+venv/
+__pycache__/
